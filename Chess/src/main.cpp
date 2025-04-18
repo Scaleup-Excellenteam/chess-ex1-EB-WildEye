@@ -1,5 +1,6 @@
 // Chess 
 #include "Chess.h"
+#include "GameEngine.h"
 
 int main()
 {
@@ -7,6 +8,7 @@ int main()
 //	string board = "##########K###############################R#############r#r#####";
 	Chess a(board);
 	int codeResponse = 0;
+	GameEngine game(board); 
 	string res = a.getInput();
 	while (res != "exit")
 	{
@@ -25,10 +27,9 @@ int main()
 		*/
 
 		/**/ 
-		{ // put your code here instead that code
-			cout << "code response >> ";
-			cin >> codeResponse;
-		}
+			{ // get user input, check validation and set the code response
+				codeResponse = game.validateMove(res);
+			}
 		/**/
 
 		a.setCodeResponse(codeResponse);

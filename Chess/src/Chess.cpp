@@ -4,15 +4,15 @@
 
 using namespace std;
 
-#ifdef _WIN32
+#ifdef _WIN32 // Windows specific includes
 
 // clear the screen "cls"
 void Chess::clear() const 
 {
 	COORD topLeft = { 0, 0 };
-	HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
-	CONSOLE_SCREEN_BUFFER_INFO screen;
-	DWORD written;
+	HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE); 
+	CONSOLE_SCREEN_BUFFER_INFO screen; // get the screen buffer info
+	DWORD written; 
 
 	GetConsoleScreenBufferInfo(console, &screen);
 	FillConsoleOutputCharacterA(
