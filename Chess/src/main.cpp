@@ -1,6 +1,8 @@
 // Chess 
 #include "Chess.h"
-#include "GameEngine.h"
+#include <iostream>
+#include <string>
+#include "GameManager.h"
 
 int main()
 {
@@ -8,8 +10,19 @@ int main()
 //	string board = "##########K###############################R#############r#r#####";
 	Chess a(board);
 	int codeResponse = 0;
-	GameEngine game(board); 
 	string res = a.getInput();
+	
+
+
+	// chacking if ai recom works
+	// auto hints = AI::findBestMoves(gm.currentBoard(), true, 5);
+
+	// for(const auto& h: hints){
+	// 	std::cout << h << '\n';
+	// }
+
+	int currentTurn = 1; // 1 for white, 0 for black
+
 	while (res != "exit")
 	{
 		/* 
@@ -27,10 +40,11 @@ int main()
 		*/
 
 		/**/ 
-			{ // get user input, check validation and set the code response
-				codeResponse = game.validateMove(res);
-			}
-		/**/
+		codeResponse = a.validateMoveViaManager(res);
+
+		// if turn was legal, switch turn
+		currentTurn = (currentTurn + 1) % 2; // switch turn
+
 
 		a.setCodeResponse(codeResponse);
 		res = a.getInput(); 

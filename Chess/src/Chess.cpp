@@ -1,18 +1,20 @@
+#include "GameManager.h"
+#include "AI/BestMoveFinder.h"
 #include "Chess.h"
 #include <iostream>
 #include <string>
 
 using namespace std;
 
-#ifdef _WIN32 // Windows specific includes
+#ifdef _WIN32
 
 // clear the screen "cls"
 void Chess::clear() const 
 {
 	COORD topLeft = { 0, 0 };
-	HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE); 
-	CONSOLE_SCREEN_BUFFER_INFO screen; // get the screen buffer info
-	DWORD written; 
+	HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
+	CONSOLE_SCREEN_BUFFER_INFO screen;
+	DWORD written;
 
 	GetConsoleScreenBufferInfo(console, &screen);
 	FillConsoleOutputCharacterA(
@@ -165,6 +167,24 @@ void Chess::setPieces()
 
 #endif // WINDOWS
 
+
+void Chess::syncBoardStringWithBoard()
+{
+    m_boardString.clear();
+    m_boardString.reserve(64);
+
+    const Board& b = manager_.currentBoard();    // exposes the real board
+
+    for (int r = 0; r < 8; ++r)
+        for (int c = 0; c < 8; ++c)
+            if (const Piece* p = b.getPiece(r, c))
+                m_boardString.push_back(p->getSymbol());   // same char set we draw
+            else
+                m_boardString.push_back('#');
+}
+
+
+
 // print the only the board to screen 
 void Chess::show() const 
 {
@@ -180,16 +200,17 @@ void Chess::displayBoard() const
 {
 	clear();
 	show();
-	cout << m_msg<< m_errorMsg;
+	cout << m_msg<< m_errorMsg << m_hint;
 	
 }
-// print the who is turn before getting input 
+
+// print the who is turn before getting input
 void Chess::showAskInput() const 
 {
 	if (m_turn)
-		cout << "Player 1 (White - Capital letters) >> ";
+		cout << "Player 1 (White - Small letters) >> ";
 	else
-		cout << "Player 2 (Black - Small letters)   >> ";
+		cout << "Player 2 (Black - Capital letters) >> ";
 }
 // check if the source and dest are the same 
 bool Chess::isSame() const 
@@ -213,20 +234,39 @@ bool Chess::isExit() const
 // execute the movement on board 
 void Chess::excute()
 {
-	int row = (m_input[0] - 'a');
-	int col = (m_input[1] - '1');
-	char pieceInSource = m_boardString[(row * 8) + col]; 
-	m_boardString[(row * 8) + col] = '#'; 
+    /* 1 ── Convert algebraic chars to 0-based indices */
+    int srcRow = m_input[0] - 'a';
+    int srcCol = m_input[1] - '1';
+    int dstRow = m_input[2] - 'a';
+    int dstCol = m_input[3] - '1';
 
-	row = (m_input[2] - 'a');
-	col = (m_input[3] - '1');
-	m_boardString[(row * 8) + col] = pieceInSource; 
+    /* 2 ── Let the engine move the piece */
+    manager_.makeMove(srcRow, srcCol, dstRow, dstCol);
 
-	setPieces(); 
+    /* 3 ── Rebuild the 64-char GUI string from the engine’s board */
+    m_boardString.assign(64, '#');           // fill with blanks
+
+    const Board& board = manager_.currentBoard();
+    for (int r = 0; r < 8; ++r)
+        for (int c = 0; c < 8; ++c)
+            if (const Piece* p = board.getPiece(r, c))
+                m_boardString[r * 8 + c] = p->getSymbol();
+
+    /* 4 ── Redraw the ASCII board */
+    setPieces();
 }
+
+
 // check the response code and switch turn if needed 
 void Chess::doTurn()
 {
+
+	int srcRow = (m_input[0] - 'a');
+	int srcCol = (m_input[1] - '1');
+	int destRow = (m_input[2] - 'a');
+	int destCol = (m_input[3] - '1');
+
+
 	m_errorMsg = "\n"; 
 	switch (m_codeResponse)
 	{
@@ -258,14 +298,47 @@ void Chess::doTurn()
 	case 41:
 	{
 		excute();
+		syncBoardStringWithBoard(); // sync the board string with the board
+		setPieces(); // set the pieces on the board
 		m_turn = !m_turn;
+		auto recs = AI::findBestMoves(manager_.currentBoard(), m_turn, 3);
+		if (!recs.empty()) {
+        	std::string hint = recs.front().toString();
+			if(m_turn){
+				for (char& c : hint) {
+					if ('A' <= c && c <= 'Z') {
+						c = std::tolower(c); // convert to lowercase for white pieces
+					}
+			}
+			m_hint = "Hint: " + hint + '\n';
+		}else {
+			m_hint.clear();
+		}
+	}
 		m_msg = "the last movement was legal and cause check \n";
 		break;
 	}
 	case 42:
 	{
 		excute();
+		syncBoardStringWithBoard(); // sync the board string with the board
+		setPieces(); // set the pieces on the board
 		m_turn = !m_turn;
+		auto recs = AI::findBestMoves(manager_.currentBoard(), m_turn, 3);
+		if (!recs.empty()) {
+			std::string hint = recs.front().toString();
+			if (m_turn) {
+				for (char& c : hint) {
+					if ('A' <= c && c <= 'Z') {
+						c = std::tolower(c); // convert to lowercase for white pieces
+					}
+				}
+			}
+				m_hint = "Hint: " + hint + '\n';
+		}else {
+			m_hint.clear();
+		}
+
 		m_msg = "the last movement was legal \n";
 		break;
 	}
@@ -274,10 +347,13 @@ void Chess::doTurn()
 
 // C'tor
 Chess::Chess(const string& start)
-	: m_boardString(start),m_codeResponse(-1)
+	: m_boardString(start),m_codeResponse(-1), m_turn(true)
 {
 	setFrames();
-	setPieces();
+	//setPieces();
+	manager_.initGame();
+	syncBoardStringWithBoard(); // sync the board string with the board
+	setPieces(); // set the pieces on the board
 }
 
 // get the source and destination 
@@ -321,9 +397,15 @@ string Chess::getInput()
 }
 
 void Chess::setCodeResponse(int codeResponse)
+
 {
 	if (((11 <= codeResponse) && (codeResponse <= 13)) ||
 		((21 == codeResponse) || (codeResponse == 31)) ||
 		((41 == codeResponse) || (codeResponse == 42)))
 		m_codeResponse = codeResponse;
+}
+
+int Chess::validateMoveViaManager(const std::string& mv) const
+{
+    return manager_.validateMove(mv);   // uses the ONE true board
 }
