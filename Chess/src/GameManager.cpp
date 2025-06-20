@@ -1,4 +1,5 @@
 #include "GameManager.h"
+#include "Chess.h"
 
 // ——— constructor ———
 GameManager::GameManager()
@@ -12,59 +13,39 @@ GameManager::GameManager()
 // ——— initGame ———
 void GameManager::initGame()
 {
-
-    /* 1. fresh board ------------------------------------------- */
+    /* ~~~ 1. Fresh board ~~~ */
     board = std::make_unique<Board>();
 
-    /* 2. fresh piece registry ---------------------------------- */
-    pieces.clear();
-    pieces.reserve(32);
+    /* ~~~ 2. Black back rank (row 0) ~~~ */
+    board->setPiece(0, 0, std::make_unique<Rook>  (false));
+    board->setPiece(0, 1, std::make_unique<Knight>(false));
+    board->setPiece(0, 2, std::make_unique<Bishop>(false));
+    board->setPiece(0, 3, std::make_unique<Queen> (false));
+    board->setPiece(0, 4, std::make_unique<King>  (false));
+    board->setPiece(0, 5, std::make_unique<Bishop>(false));
+    board->setPiece(0, 6, std::make_unique<Knight>(false));
+    board->setPiece(0, 7, std::make_unique<Rook>  (false));
 
-    /* helper: push raw pointer into pieces[] and pass unique_ptr to Board */
-    auto put = [this](int row, int col, Piece* raw)
-    {
-        pieces.push_back(raw);
-        board->setPiece(row, col, std::unique_ptr<Piece>(raw));
-    };
-
-    /* 3. Black back rank (row 0) – UPPER-case symbols ----------- */
-    put(0, 0, new Rook  (false));   // A8
-    put(0, 1, new Knight(false));   // B8
-    put(0, 2, new Bishop(false));   // C8
-    put(0, 3, new Queen (false));   // D8
-    put(0, 4, new King  (false));   // E8
-    put(0, 5, new Bishop(false));   // F8
-    put(0, 6, new Knight(false));   // G8
-    put(0, 7, new Rook  (false));   // H8
-
-    /* 4. Black pawns (row 1) ----------------------------------- */
+    /* ~~~ 3. Black pawns (row 1) ~~~ */
     for (int c = 0; c < 8; ++c)
-        put(1, c, new Pawn(false));           // A7 .. H7
+        board->setPiece(1, c, std::make_unique<Pawn>(false));
 
-    /* 5. White pawns (row 6) – lower-case symbols -------------- */
+    /* ~~~ 4. White pawns (row 6) ~~~ */
     for (int c = 0; c < 8; ++c)
-        put(6, c, new Pawn(true));            // A2 .. H2
+        board->setPiece(6, c, std::make_unique<Pawn>(true));
 
-    /* 6. White back rank (row 7) ------------------------------- */
-    put(7, 0, new Rook  (true));    // A1
-    put(7, 1, new Knight(true));    // B1
-    put(7, 2, new Bishop(true));    // C1
-    put(7, 3, new Queen (true));    // D1
-    put(7, 4, new King  (true));    // E1
-    put(7, 5, new Bishop(true));    // F1
-    put(7, 6, new Knight(true));    // G1
-    put(7, 7, new Rook  (true));    // H1
+    /* ~~~ 5. White back rank (row 7) ~~~ */
+    board->setPiece(7, 0, std::make_unique<Rook>  (true));
+    board->setPiece(7, 1, std::make_unique<Knight>(true));
+    board->setPiece(7, 2, std::make_unique<Bishop>(true));
+    board->setPiece(7, 3, std::make_unique<Queen> (true));
+    board->setPiece(7, 4, std::make_unique<King>  (true));
+    board->setPiece(7, 5, std::make_unique<Bishop>(true));
+    board->setPiece(7, 6, std::make_unique<Knight>(true));
+    board->setPiece(7, 7, std::make_unique<Rook>  (true));
 }
 
 
-GameManager::~GameManager()
-{
-    board.reset(); // Automatically cleans up the board and pieces
-    for (Piece* piece : pieces) {
-        delete piece; // Clean up each piece
-    }
-    pieces.clear(); // Clear the vector of pieces
-}
 
 void GameManager::setCodeResponse(int code)
 {
@@ -108,6 +89,17 @@ void GameManager::displayBoard() const
         }
         std::cout << "\n";
     }
+}
+
+void GameManager::applyMove(const std::string& mv)
+{
+    // convert "e2e4" into indices
+    int srcRow = mv[0] - 'a'; // file → row
+    int srcCol = mv[1] - '1'; // rank → col
+    int dstRow = mv[2] - 'a';
+    int dstCol = mv[3] - '1';
+
+    makeMove(srcRow, srcCol, dstRow, dstCol); // engine call
 }
 
 // ——— makeMove ———
@@ -183,4 +175,28 @@ bool GameManager::isStalemate() const
     if (board->inCheck(whiteToMove)) return false;
     auto legal = board->generateLegalMoves(whiteToMove);
     return legal.empty();
+}
+
+
+ void GameManager::run()
+ {
+
+     /* ~~~ 7. GameManager::run – full game loop ~~~ */
+  initGame();                                 // set up board & pieces
+    Chess view("Console Chess");                // create the view/UI
+ 
+  while (true) {
+        view.draw(*board);                      // show current board
+        std::string mv = view.readMove();       // e.g. "e2e4" or "exit"
+        if (mv == "exit")                       // user wants to quit
+            break;
+
+        int code = validateMove(mv);            // legal? returns 11,12,…,42
+        if (code < 40) {                        // <40 are invalid‐move codes
+            view.showInvalidMove(code);         // tell the user
+            continue;                           // ask again
+        }
+
+        applyMove(mv);                          // make the move on the board
+    }
 }

@@ -4,8 +4,6 @@
 #define GAMEMANAGER_H
 #include <iostream>
 #include <string>
-#include <vector>
-
 
 #include "Board.h"
 #include "Pieces/Piece.h"
@@ -22,14 +20,13 @@ class GameManager
     
 private:
     std::unique_ptr<Board> board; // Pointer to the chess board
-    std::vector<Piece*> pieces; // Store all pieces
     bool isWhiteTurn_ = true; // True if it's white's turn, false for black
     int codeResponse;
 
 
 public:
     GameManager();
-    ~GameManager();
+    ~GameManager() = default;
 
     void initGame();
     void setCodeResponse(int code);
@@ -46,6 +43,9 @@ public:
     bool isStalemate() const;
 
     bool whiteToMove() const { return isWhiteTurn_; }
+
+    void run();
+    void applyMove(const std::string& mv);
 };
 
 #endif // GAMEMANAGER_H

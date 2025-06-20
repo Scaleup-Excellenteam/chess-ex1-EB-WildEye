@@ -50,4 +50,16 @@ public:
 	string getInput();
 	void setCodeResponse(int codeResponse);
     int validateMoveViaManager(const std::string &mv) const;
+
+	/* ~~~ Draw the given board state ~~~ */
+	void draw(const Board& board);
+
+	/* ~~~ Prompt the user and return a move string (e.g. "e2e4") ~~~ */
+	std::string readMove();
+
+	/* ~~~ Notify the view of an invalid move code ~~~ */
+	void showInvalidMove(int code);
+
+	/* ~~~ Show final result: checkmate or draw ~~~ */
+	void showResult(bool whiteTurn, bool gameOver);
 };

@@ -409,3 +409,36 @@ int Chess::validateMoveViaManager(const std::string& mv) const
 {
     return manager_.validateMove(mv);   // uses the ONE true board
 }
+
+/* ~~~ Draw the board (temporary: just refresh display) ~~~ */
+void Chess::draw(const Board& /*board*/)
+{
+    // For now, just re-sync and display what we have
+    syncBoardStringWithBoard();
+    setPieces();
+    displayBoard();
+}
+
+/* ~~~ Read a move from the user ~~~ */
+std::string Chess::readMove()
+{
+    return getInput();
+}
+
+/* ~~~ Show an invalid-move message ~~~ */
+void Chess::showInvalidMove(int code)
+{
+    m_errorMsg = "Invalid move code: " + std::to_string(code) + "\n";
+    displayBoard();
+}
+
+/* ~~~ Show game result at end ~~~ */
+void Chess::showResult(bool whiteTurn, bool gameOver)
+{
+    if (!gameOver) return;
+    clear();
+    if (whiteTurn)
+        std::cout << "Black wins by checkmate!\n";
+    else
+        std::cout << "White wins by checkmate!\n";
+}
