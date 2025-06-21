@@ -410,19 +410,36 @@ int Chess::validateMoveViaManager(const std::string& mv) const
     return manager_.validateMove(mv);   // uses the ONE true board
 }
 
-/* ~~~ Draw the board (temporary: just refresh display) ~~~ */
-void Chess::draw(const Board& /*board*/)
+
+/* ~~~ Draw the passed board state ~~~ */
+void Chess::draw(const Board& b)
 {
-    // For now, just re-sync and display what we have
-    syncBoardStringWithBoard();
-    setPieces();
-    displayBoard();
+    clear();        // clear the screen
+    setFrames();    // redraw the empty board frame
+
+    // Build a 64-char string from the passed board
+    m_boardString.clear();
+    m_boardString.reserve(64);
+    for (int r = 7; r >= 0; --r) {
+        for (int c = 0; c < 8; ++c) {
+            if (const Piece* p = b.getPiece(r, c))
+                m_boardString.push_back(p->getSymbol());
+            else
+                m_boardString.push_back('#');
+        }
+    }
+
+    setPieces();    // map m_boardString into the ASCII grid
+    displayBoard(); // render it
 }
 
 /* ~~~ Read a move from the user ~~~ */
 std::string Chess::readMove()
 {
-    return getInput();
+    std::string mv;
+    std::cout << "Enter move (e2e4 or exit): ";
+    std::cin  >> mv;
+    return mv;
 }
 
 /* ~~~ Show an invalid-move message ~~~ */
@@ -432,7 +449,7 @@ void Chess::showInvalidMove(int code)
     displayBoard();
 }
 
-/* ~~~ Show game result at end ~~~ */
+/* ~~~ showResult: final checkmate/draw message ~~~ */
 void Chess::showResult(bool whiteTurn, bool gameOver)
 {
     if (!gameOver) return;

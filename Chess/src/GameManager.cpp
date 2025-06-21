@@ -1,22 +1,21 @@
 #include "GameManager.h"
+#include "AI/BestMoveFinder.h"
 #include "Chess.h"
 
 // ——— constructor ———
 GameManager::GameManager()
-  : board(nullptr),
-    codeResponse(-1),
-    isWhiteTurn_(true)
+  : board(nullptr), codeResponse(-1), isWhiteTurn_(true)
 {
     initGame();
 }
 
+
 // ——— initGame ———
 void GameManager::initGame()
 {
-    /* ~~~ 1. Fresh board ~~~ */
     board = std::make_unique<Board>();
 
-    /* ~~~ 2. Black back rank (row 0) ~~~ */
+    /* Black back rank (row 0) */
     board->setPiece(0, 0, std::make_unique<Rook>  (false));
     board->setPiece(0, 1, std::make_unique<Knight>(false));
     board->setPiece(0, 2, std::make_unique<Bishop>(false));
@@ -26,15 +25,15 @@ void GameManager::initGame()
     board->setPiece(0, 6, std::make_unique<Knight>(false));
     board->setPiece(0, 7, std::make_unique<Rook>  (false));
 
-    /* ~~~ 3. Black pawns (row 1) ~~~ */
+    /* Black pawns (row 1) */
     for (int c = 0; c < 8; ++c)
         board->setPiece(1, c, std::make_unique<Pawn>(false));
 
-    /* ~~~ 4. White pawns (row 6) ~~~ */
+    /* White pawns (row 6) */
     for (int c = 0; c < 8; ++c)
         board->setPiece(6, c, std::make_unique<Pawn>(true));
 
-    /* ~~~ 5. White back rank (row 7) ~~~ */
+    /* White back rank (row 7) */
     board->setPiece(7, 0, std::make_unique<Rook>  (true));
     board->setPiece(7, 1, std::make_unique<Knight>(true));
     board->setPiece(7, 2, std::make_unique<Bishop>(true));
@@ -44,7 +43,6 @@ void GameManager::initGame()
     board->setPiece(7, 6, std::make_unique<Knight>(true));
     board->setPiece(7, 7, std::make_unique<Rook>  (true));
 }
-
 
 
 void GameManager::setCodeResponse(int code)
@@ -93,27 +91,14 @@ void GameManager::displayBoard() const
 
 void GameManager::applyMove(const std::string& mv)
 {
-    // convert "e2e4" into indices
-    int srcRow = mv[0] - 'a'; // file → row
-    int srcCol = mv[1] - '1'; // rank → col
-    int dstRow = mv[2] - 'a';
-    int dstCol = mv[3] - '1';
+    int srcCol = mv[0] - 'a';         // file → column
+    int srcRow = '8' - mv[1];         // rank '1'→row7, '8'→row0
+    int dstCol = mv[2] - 'a';
+    int dstRow = '8' - mv[3];
 
-    makeMove(srcRow, srcCol, dstRow, dstCol); // engine call
+    makeMove(srcRow, srcCol, dstRow, dstCol);
 }
 
-// ——— makeMove ———
-// validate & apply a move, set the codeResponse, and swap turns on success
-void GameManager::makeMove(const std::string& move)
-{
-    int playerIsWhite = whiteToMove() ? 1 : 0;
-    int code = validateMove(move);
-    setCodeResponse(code);
-    if (code == 42 || code == 41) {
-
-        isWhiteTurn_ = !isWhiteTurn_; // switch turn only on legal moves
-    }
-}
 
 bool GameManager::makeMove(int srcRow, int srcCol, int destRow, int destCol)
 {
@@ -178,25 +163,49 @@ bool GameManager::isStalemate() const
 }
 
 
- void GameManager::run()
- {
+void GameManager::run()
+{
+    /* ~~~ Prompt for mode & AI depth ~~~ */
+    std::cout << "Select mode: 1) Human vs Human, 2) Human vs Computer: ";
+    int mode;
+    std::cin >> mode;
 
-     /* ~~~ 7. GameManager::run – full game loop ~~~ */
-  initGame();                                 // set up board & pieces
-    Chess view("Console Chess");                // create the view/UI
- 
-  while (true) {
-        view.draw(*board);                      // show current board
-        std::string mv = view.readMove();       // e.g. "e2e4" or "exit"
-        if (mv == "exit")                       // user wants to quit
+    int depth = 0;
+    if (mode == 2) {
+        std::cout << "Enter AI search depth: ";
+        std::cin >> depth;
+    }
+
+    /* ~~~ Main game loop ~~~ */
+    initGame();                             // set up board & pieces
+    Chess view("Console Chess");            // create the ASCII view
+
+    while (true) {
+        view.draw(*board);                  // draw current position
+        std::string mv = view.readMove();   // get "e2e4" or "exit"
+        if (mv == "exit")                   // quit if requested
             break;
 
-        int code = validateMove(mv);            // legal? returns 11,12,…,42
-        if (code < 40) {                        // <40 are invalid‐move codes
-            view.showInvalidMove(code);         // tell the user
-            continue;                           // ask again
+        int code = validateMove(mv);        // check legality
+        if (code < 40) {                    // codes <40 are invalid
+            view.showInvalidMove(code);     // show error
+            continue;                       // prompt again
         }
 
-        applyMove(mv);                          // make the move on the board
+        applyMove(mv);                      // apply human move
+        view.draw(*board);                  // redraw after human move
+
+        if (mode == 2) {                    // if AI enabled
+            auto recs = AI::findBestMoves(
+                *board,
+                whiteToMove(),
+                depth
+            );
+            if (!recs.empty()) {
+                std::string aiMv = recs.front().toString();
+                applyMove(aiMv);            // apply AI move
+                view.draw(*board);          // redraw after AI move
+            }
+        }
     }
 }
