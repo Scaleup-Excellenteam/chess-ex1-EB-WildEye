@@ -123,20 +123,29 @@ bool GameManager::makeMove(int srcRow, int srcCol, int destRow, int destCol)
 // check move legality without mutating the board by looking at generateLegalMoves
 int GameManager::validateMove(const std::string& mv) const
 {
-    if (mv.size()!=4) return 11;
+    if (mv.size() != 4) return 11;
 
-    int sR = mv[0]-'a', sC = mv[1]-'1';
-    int dR = mv[2]-'a', dC = mv[3]-'1';
-    if (sR<0||sR>=8||sC<0||sC>=8||dR<0||dR>=8||dC<0||dC>=8) return 11;
+    // --- CORRECTED COORDINATE LOGIC ---
+    int srcCol = mv[0] - 'a';         // file 'a' -> col 0
+    int srcRow = '8' - mv[1];         // rank '8' -> row 0
+    int dstCol = mv[2] - 'a';
+    int dstRow = '8' - mv[3];
 
-    Piece* src = board->getPiece(sR,sC);
+    // Check if indices are within the board
+    if (srcRow < 0 || srcRow >= 8 || srcCol < 0 || srcCol >= 8 ||
+        dstRow < 0 || dstRow >= 8 || dstCol < 0 || dstCol >= 8) {
+        return 11; // Invalid format or out of bounds
+    }
+    // --- END CORRECTION ---
+
+    Piece* src = board->getPiece(srcRow, srcCol);
     if (!src) return 11;                           // no piece
-    if (src->getIsWhite()!=isWhiteTurn_) return 12; // opponent’s piece
+    if (src->getIsWhite() != isWhiteTurn_) return 12; // opponent’s piece
 
-    if (auto dst = board->getPiece(dR,dC);
-        dst && dst->getIsWhite()==src->getIsWhite()) return 13; // own piece
+    if (auto dst = board->getPiece(dstRow, dstCol);
+        dst && dst->getIsWhite() == src->getIsWhite()) return 13; // own piece
 
-    if (!src->isValidMove(sR,sC,dR,dC,*board)) return 21; // piece-specific rule
+    if (!src->isValidMove(srcRow, srcCol, dstRow, dstCol, *board)) return 21; // piece-specific rule
 
     // TODO: if you add king-in-check detection, return 41 here.
     return 42;                                      // legal & safe

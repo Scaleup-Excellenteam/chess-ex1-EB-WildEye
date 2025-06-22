@@ -3,7 +3,7 @@
 #include <cmath> // for abs()
 
 Knight::Knight(bool isWhite) : Piece(isWhite) {
-    char symbol = isWhite ? 'n' : 'N'; // Assign symbol based on color
+    char symbol = isWhite ? 'N' : 'n'; // Assign symbol based on color
     bool isAlive = true; // Knight is alive when created
     this->setSymbol(symbol); // Set the symbol for the piece
     this->setIsAlive(isAlive); // Set the alive status for the piece

@@ -412,15 +412,16 @@ int Chess::validateMoveViaManager(const std::string& mv) const
 
 
 /* ~~~ Draw the passed board state ~~~ */
+// CORRECT DRAWING ORDER
 void Chess::draw(const Board& b)
 {
-    clear();        // clear the screen
-    setFrames();    // redraw the empty board frame
+    clear();
+    setFrames();
 
-    // Build a 64-char string from the passed board
     m_boardString.clear();
     m_boardString.reserve(64);
-    for (int r = 7; r >= 0; --r) {
+    // Corrected loop: r = 0 to 7
+    for (int r = 0; r < 8; ++r) {
         for (int c = 0; c < 8; ++c) {
             if (const Piece* p = b.getPiece(r, c))
                 m_boardString.push_back(p->getSymbol());
@@ -429,8 +430,8 @@ void Chess::draw(const Board& b)
         }
     }
 
-    setPieces();    // map m_boardString into the ASCII grid
-    displayBoard(); // render it
+    setPieces();
+    displayBoard();
 }
 
 /* ~~~ Read a move from the user ~~~ */

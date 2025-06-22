@@ -4,7 +4,7 @@
 #include "Pieces/Bishop.h"
 #include <cmath> // for abs()
 Queen::Queen(bool isWhite) : Piece(isWhite) {
-    char symbol = isWhite ? 'q' : 'Q'; // Assign symbol based on color
+    char symbol = isWhite ? 'Q' : 'q'; // Assign symbol based on color
     bool isAlive = true; // Queen is alive when created
     this->setSymbol(symbol); // Set the symbol for the piece
     this->setIsAlive(isAlive); // Set the alive status for the piece

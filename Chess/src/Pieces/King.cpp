@@ -4,7 +4,7 @@
 
 
 King::King(bool isWhite) : Piece(isWhite) {
-    char symbol = isWhite ? 'k' : 'K'; // Assign symbol based on color
+    char symbol = isWhite ? 'K' : 'k'; // Assign symbol based on color
     bool isAlive = true; // King is alive when created
     this->setSymbol(symbol); // Set the symbol for the piece
     this->setIsAlive(isAlive); // Set the alive status for the piece

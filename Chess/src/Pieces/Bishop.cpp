@@ -2,7 +2,7 @@
 
 
 Bishop::Bishop(bool isWhite) : Piece(isWhite) {
-    char symbol = isWhite ? 'b' : 'B'; // Assign symbol based on color
+    char symbol = isWhite ? 'B' : 'b'; // Assign symbol based on color
     bool isAlive = true; // Bishop is alive when created
     this->setSymbol(symbol); // Set the symbol for the piece
     this->setIsAlive(isAlive); // Set the alive status for the piece

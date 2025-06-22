@@ -2,7 +2,7 @@
 #include "Board.h"
 
 Pawn::Pawn(bool isWhite) : Piece(isWhite) {
-    char symbol = isWhite ? 'p' : 'P'; // Assign symbol based on color
+    char symbol = isWhite ? 'P' : 'p'; // Assign symbol based on color
     bool isAlive = true; // Pawn is alive when created
     this->setSymbol(symbol); // Set the symbol for the piece
     this->setIsAlive(isAlive); // Set the alive status for the piece
